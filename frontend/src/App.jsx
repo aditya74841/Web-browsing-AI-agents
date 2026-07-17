@@ -8,6 +8,9 @@ export default function App() {
   const [error, setError] = useState('')
   const messagesEndRef = useRef(null)
 
+  // Backend API URL
+  const API_URL = 'https://web-browsing-ai-agents.onrender.com'
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
@@ -27,7 +30,7 @@ export default function App() {
     setError('')
 
     try {
-      const response = await fetch('/api/chat', {
+      const response = await fetch(`${API_URL}/api/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
