@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 import express from "express";
 import cors from "cors";
+import rateLimit from "express-rate-limit";
 import { Groq } from "groq-sdk";
 import { tavily } from "@tavily/core";
 import path from "path";
@@ -11,9 +12,19 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Rate limiting: 2 requests per second per IP
+const limiter = rateLimit({
+  windowMs: 1000, // 1 second
+  max: 2, // 2 requests per windowMs
+  message: { error: "Too many requests from this IP, please try again after a second." },
+  standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+});
+
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(limiter); // Apply rate limiting to all requests
 
 // Serve static files from frontend build
 const __filename = fileURLToPath(import.meta.url);
