@@ -29,7 +29,8 @@ app.use(limiter); // Apply rate limiting to all requests
 // Serve static files from frontend build
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-app.use(express.static(path.join(__dirname, "../frontend/dist")));
+const distPath = path.join(__dirname, "../frontend/dist");
+app.use(express.static(distPath));
 
 // Initialize API clients
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
@@ -129,9 +130,44 @@ app.post("/api/chat", async (req, res) => {
   }
 });
 
-// Serve frontend for all other routes
+// Health check route
+app.get("/health", (req, res) => {
+  res.json({
+    status: "ok",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || "development",
+  });
+});
+
+// Home route
+app.get("/", (req, res) => {
+  const indexPath = path.join(distPath, "index.html");
+  res.sendFile(indexPath, (err) => {
+    if (err) {
+      res.status(200).json({
+        message: "AI Search Assistant API",
+        status: "running",
+        endpoints: {
+          chat: "POST /api/chat",
+          health: "GET /health",
+        },
+      });
+    }
+  });
+});
+
+// Serve frontend for all other routes (SPA fallback)
 app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "../frontend/dist/index.html"));
+  const indexPath = path.join(distPath, "index.html");
+  res.sendFile(indexPath, (err) => {
+    if (err) {
+      res.status(404).json({
+        error: "Not found",
+        message: "Frontend not built. Run: cd frontend && npm run build",
+      });
+    }
+  });
 });
 
 app.listen(PORT, () => {
